@@ -66,7 +66,7 @@ Please [check the guide here](https://koreader.rocks/user_guide/#L2-userpatches)
 
 ### Example Rules
 
-- **Authors contains "Кинг"** - All books by authors containing "Кинг"
+- **Authors contains "King"** - All books by authors containing "King"
 - **Series equals "Harry Potter"** - All books in the Harry Potter series
 - **Pages greater than 500** - All books with more than 500 pages
 - **Language equals "en"** - All English books
@@ -173,12 +173,3 @@ This patch modifies the `ptutil.good_serif` and `ptutil.good_sans` font paths th
 - UI fonts
 - Reader fonts
 - Footer text (path display at bottom)
-
----
-
-## Credits
-
-Inspired by patches from:
-- [SeriousHornet's Visual Overhaul Suite](https://github.com/SeriousHornet/KOReader.patches)
-- [joshuacant's KOReader patches](https://github.com/joshuacant/KOReader.patches)
-- sebdelsol and u/medinauta
