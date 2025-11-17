@@ -222,3 +222,47 @@ This patch modifies the `ptutil.good_serif` and `ptutil.good_sans` font paths th
 - UI fonts
 - Reader fonts
 - Footer text (path display at bottom)
+
+---
+
+## 🞂 [2-cyrillic-transliteration-reverter.lua](2-cyrillic-transliteration-reverter.lua)
+
+**Cyrillic Transliteration Reverter** - Automatically converts transliterated text back to Cyrillic for folder names displayed by Project: Title plugin in file manager only.
+
+### Features
+
+- **Automatic conversion**: Detects and converts transliterated Russian text back to Cyrillic script
+- **Comprehensive rules**: Based on ISO 9 (GOST 7.79-2000), ALA-LC, and common transliteration patterns
+- **File manager only**: Only affects folder names in file manager, not other menus
+- **Smart detection**: Only processes text that looks like transliterated Russian
+- **Virtual collections support**: Excludes virtual Collections folder from transliteration
+
+### Installation
+
+1. Copy `2-cyrillic-transliteration-reverter.lua` to `koreader/patches/` folder
+2. Restart KOReader
+
+### Usage
+
+The patch works automatically - no configuration needed. When Calibre sends books with transliterated folder names (like "Briendon Sandierson" instead of "Брендон Сандерсон"), the patch will automatically detect and convert transliterated Russian text back to Cyrillic in the file browser while keeping the original folder structure intact.
+
+### Examples
+
+The patch automatically converts:
+- `Briendon Sandierson` → `Брендон Сандерсон`
+- `Dжордж Оруелл` → `Джордж Оруэлл`
+- `Pom Iu Dzhin` → `Пом Ю Джин`
+- `Dozory` → `Дозоры`
+- `Portaly` → `Порталы`
+- `Romany` → `Романы`
+
+### How It Works
+
+The patch automatically:
+1. **Detects transliterated Russian text** using common patterns (ch, sh, zh, ya, yu, etc.)
+2. **Converts using standard transliteration rules**:
+   - Multi-character patterns: ch→ч, sh→ш, zh→ж, ya→я, yu→ю, etc.
+   - Single character patterns: a→а, b→б, v→в, g→г, etc.
+3. **Preserves folder structure** (keeps trailing slashes for folders)
+4. **Only processes text that looks like transliterated Russian** - English text is left unchanged
+5. **Excludes virtual Collections folder** - The virtual Collections folder injected by `2-pt-collections.lua` is not transliterated
