@@ -204,6 +204,14 @@ local function evaluateRules(book_props, rules)
 end
 
 -- Store BookInfoManager reference
+local SMART_COLLECTIONS_DEBUG = false -- Set to true to log detailed diagnostics
+
+local function logDebug(...)
+    if SMART_COLLECTIONS_DEBUG then
+        logger.info(...)
+    end
+end
+
 local BookInfoManagerRef = nil
 
 -- Update a smart collection based on its rules
@@ -233,7 +241,7 @@ local function updateSmartCollection(collection_name, rules)
     local files_to_check = {}
     
     if folders then
-        logger.info("Smart Collections: Found", util.tableSize(folders), "connected folder(s)")
+        logDebug("Smart Collections: Found", util.tableSize(folders), "connected folder(s)")
         -- Scan connected folders
         for folder, folder_settings in pairs(folders) do
             -- Normalize folder path
@@ -261,7 +269,7 @@ local function updateSmartCollection(collection_name, rules)
                     end
                 end, false) -- Don't scan subfolders first
                 
-                logger.info("Smart Collections: Found", files_in_folder, "books directly in folder", folder)
+                logDebug("Smart Collections: Found", files_in_folder, "books directly in folder", folder)
                 
                 -- Add files found directly
                 for file in pairs(files_found_directly) do
@@ -273,12 +281,12 @@ local function updateSmartCollection(collection_name, rules)
                 if subfolders_setting == true then
                     -- Explicitly enabled
                     should_scan_subfolders = true
-                    logger.info("Smart Collections: Subfolders explicitly enabled in settings")
+                    logDebug("Smart Collections: Subfolders explicitly enabled in settings")
                 elseif subfolders_setting == nil or subfolders_setting == false then
                     -- Not set or explicitly disabled - but for smart collections, scan if no books in root
                     if files_in_folder == 0 then
                         should_scan_subfolders = true
-                        logger.info("Smart Collections: No books in root folder, automatically scanning subfolders...")
+                        logDebug("Smart Collections: No books in root folder, automatically scanning subfolders...")
                     end
                 end
                 
@@ -297,7 +305,7 @@ local function updateSmartCollection(collection_name, rules)
                         end
                     end, true) -- Scan subfolders
                     
-                    logger.info("Smart Collections: Found", files_in_subfolders, "books in subfolders out of", all_files_in_subfolders, "total files")
+                    logDebug("Smart Collections: Found", files_in_subfolders, "books in subfolders out of", all_files_in_subfolders, "total files")
                 end
             end
         end
@@ -307,7 +315,7 @@ local function updateSmartCollection(collection_name, rules)
         return 0
     end
     
-    logger.info("Smart Collections: Total files to check:", util.tableSize(files_to_check))
+    logDebug("Smart Collections: Total files to check:", util.tableSize(files_to_check))
     
     -- Check each file
     local files_checked = 0
@@ -326,7 +334,7 @@ local function updateSmartCollection(collection_name, rules)
             end
             
             -- Debug logging for first few files
-            if files_checked <= 5 then
+            if SMART_COLLECTIONS_DEBUG and files_checked <= 5 then
                 logger.info("Smart Collections: File", file:match("([^/]+)$"))
                 logger.info("Smart Collections: Authors", book_props.authors)
                 logger.info("Smart Collections: Matches rules", matches, "Is in collection:", is_in_collection)
@@ -342,26 +350,26 @@ local function updateSmartCollection(collection_name, rules)
             if matches and not is_in_collection then
                 ReadCollection:addItem(file, collection_name)
                 added_count = added_count + 1
-                logger.dbg("Smart Collections: Added", file, "authors:", book_props.authors)
+                logDebug("Smart Collections: Added", file, "authors:", book_props.authors)
             elseif not matches and is_in_collection then
                 ReadCollection:removeItem(file, collection_name, true)
                 removed_count = removed_count + 1
-                logger.dbg("Smart Collections: Removed", file)
+                logDebug("Smart Collections: Removed", file)
             end
         else
-            if files_checked <= 3 then
-                logger.dbg("Smart Collections: No metadata for", file)
+            if SMART_COLLECTIONS_DEBUG and files_checked <= 3 then
+                logger.info("Smart Collections: No metadata for", file)
             end
         end
     end
     
-    logger.info("Smart Collections: Matches found:", matches_count, "out of", files_with_metadata, "books with metadata")
+    logDebug("Smart Collections: Matches found:", matches_count, "out of", files_with_metadata, "books with metadata")
     
-    logger.info("Smart Collections: Checked", files_checked, "files,", files_with_metadata, "with metadata")
+    logDebug("Smart Collections: Checked", files_checked, "files,", files_with_metadata, "with metadata")
     
     if added_count > 0 or removed_count > 0 then
         ReadCollection:write({ [collection_name] = true })
-        logger.info("Smart Collections: Updated", collection_name, "added:", added_count, "removed:", removed_count)
+        logDebug("Smart Collections: Updated", collection_name, "added:", added_count, "removed:", removed_count)
     end
     
     return added_count + removed_count
@@ -871,16 +879,25 @@ userpatch.registerPatchPluginFunc("coverbrowser", function(CoverBrowser)
     -- Try to get BookInfoManager from the plugin
     if CoverBrowser.BookInfoManager then
         BookInfoManagerRef = CoverBrowser.BookInfoManager
-        logger.info("Smart Collections: BookInfoManager loaded from CoverBrowser")
+        logDebug("Smart Collections: BookInfoManager loaded from CoverBrowser")
     else
         -- Try to require directly
         local success, bm = pcall(require, "bookinfomanager")
         if success and bm then
             BookInfoManagerRef = bm
-            logger.info("Smart Collections: BookInfoManager loaded directly")
+            logDebug("Smart Collections: BookInfoManager loaded directly")
         end
     end
 end)
 
 logger.info("Smart Collections userpatch loaded")
+
+-- Prevent KOReader's default folder syncing for smart collections
+local orig_ReadCollection_updateCollectionFromFolder = ReadCollection.updateCollectionFromFolder
+function ReadCollection:updateCollectionFromFolder(collection_name, folders, is_showing)
+    if isSmartCollection(collection_name) then
+        return 0
+    end
+    return orig_ReadCollection_updateCollectionFromFolder(self, collection_name, folders, is_showing)
+end
 
