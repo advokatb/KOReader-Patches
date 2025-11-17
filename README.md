@@ -88,7 +88,56 @@ Please [check the guide here](https://koreader.rocks/user_guide/#L2-userpatches)
 - Smart collections require at least one connected folder
 - The patch uses BookInfoManager from CoverBrowser plugin (or loads it directly)
 - Rules are stored in `koreader/settings/smart_collections.lua`
+- KOReader's default “folder sync” (auto-adding every file from connected folders) is disabled for smart collections so that only rule-matching books remain
 - Smart collections are marked with a 💡 icon in the collections list
+
+### Debug logging
+
+Verbose logging is disabled by default.  
+If you need to troubleshoot rule matching, set:
+
+```lua
+local SMART_COLLECTIONS_DEBUG = true
+```
+
+near the top of `2-smart-collections.lua`.  
+This enables detailed `logger.info` output (matched authors, rule checks, etc.). Remember to set it back to `false` once finished.
+
+---
+
+## 🞂 [2-pt-collections.lua](2-pt-collections.lua)
+
+**Collections View for Project: Title** – adds a virtual “✪ Collections” folder inside the Project: Title file browser so you can browse KOReader collections as if they were directories.
+
+### Features
+
+- Adds a global `✪ Collections` entry to File Manager (Project: Title modes)
+- Lists every KOReader collection as a folder with book counts
+- Entering a collection shows all of its books; tapping opens the book instantly
+- Works with both Grid and List layouts, respects sorting/filtering
+- Automatically refreshes whenever collections change
+- Uses `icons/folder.collections.svg` if present (custom folder icon included in repo)
+
+### Installation
+
+1. Copy `2-pt-collections.lua` to `koreader/patches/`
+2. Restart KOReader
+
+### Usage
+
+1. Open File Manager (Project: Title must be enabled)
+2. In any directory, tap the `✪ Collections` entry that appears alongside your folders
+3. Pick a collection folder to see the books it contains
+4. Tap a book to open it, or use KOReader’s standard long-press actions
+
+### Configuration
+
+- **Hide Favorites collection**: Edit `2-pt-collections.lua` and set `SHOW_FAVORITES_COLLECTION = false` (default) to hide the built-in Favorites collection from the Collections view. Set to `true` to show it.
+
+### Notes
+
+- The virtual entry is shown only at the top level (home folder) to keep subfolders uncluttered
+- The virtual folder exists only inside the UI; no files/folders are created on disk
 
 ---
 
