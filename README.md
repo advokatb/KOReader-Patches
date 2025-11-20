@@ -32,6 +32,7 @@ Please [check the guide here](https://koreader.rocks/user_guide/#L2-userpatches)
 - **Language** - Filter by book language
 - **Publication date** - Filter by publication date
 - **Pages** (numeric) - Filter by page count
+- **Reading status** - Filter by reading status (New, Reading, On hold, Finished)
 
 ### Installation
 
@@ -71,6 +72,9 @@ Please [check the guide here](https://koreader.rocks/user_guide/#L2-userpatches)
 - **Pages greater than 500** - All books with more than 500 pages
 - **Language equals "en"** - All English books
 - **Keywords contains "fantasy"** - All books tagged with "fantasy"
+- **Reading status equals "Finished"** - All finished books
+- **Reading status equals "Reading"** - All currently reading books
+- **Reading status equals "On hold"** - All books on hold
 
 ### How It Works
 

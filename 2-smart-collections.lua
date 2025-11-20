@@ -36,6 +36,7 @@ local T = ffiUtil.template
 local logger = require("logger")
 local lfs = require("libs/libkoreader-lfs")
 local DocumentRegistry = require("document/documentregistry")
+local DocSettings = require("docsettings")
 
 -- Settings storage
 local LuaSettings = require("luasettings")
@@ -69,6 +70,15 @@ local METADATA_FIELDS = {
     language = { text = _("Language"), multi_value = false },
     pubdate = { text = _("Publication date"), multi_value = false },
     pages = { text = _("Pages"), multi_value = false, numeric = true },
+    status = { text = _("Reading status"), multi_value = false, enum = true },
+}
+
+-- Reading status values
+local READING_STATUSES = {
+    new = _("New"),
+    reading = _("Reading"),
+    abandoned = _("On hold"),
+    complete = _("Finished"),
 }
 
 -- Condition operators for UI
@@ -325,6 +335,18 @@ local function updateSmartCollection(collection_name, rules)
         files_checked = files_checked + 1
         local book_props = BookInfoManager:getDocProps(file)
         if book_props and next(book_props) then
+            -- Get reading status from DocSettings
+            local doc_settings = DocSettings:open(file)
+            if doc_settings then
+                local summary = doc_settings:readSetting("summary")
+                if summary and summary.status then
+                    book_props.status = summary.status
+                else
+                    -- Default to "reading" if no status is set
+                    book_props.status = "reading"
+                end
+            end
+            
             files_with_metadata = files_with_metadata + 1
             local matches = evaluateRules(book_props, rules)
             local is_in_collection = ReadCollection:isFileInCollection(file, collection_name)
@@ -399,7 +421,13 @@ local function getOperatorOptions(field)
     
     local options = {}
     
-    if field_metadata.numeric then
+    if field_metadata.enum then
+        -- For enum fields (like status), only equals and not_equals make sense
+        options = {
+            { text = OPERATOR_TEXTS[OPERATORS.EQUALS], value = OPERATORS.EQUALS },
+            { text = OPERATOR_TEXTS[OPERATORS.NOT_EQUALS], value = OPERATORS.NOT_EQUALS },
+        }
+    elseif field_metadata.numeric then
         options = {
             { text = OPERATOR_TEXTS[OPERATORS.EQUALS], value = OPERATORS.EQUALS },
             { text = OPERATOR_TEXTS[OPERATORS.NOT_EQUALS], value = OPERATORS.NOT_EQUALS },
@@ -469,6 +497,9 @@ local function showSmartCollectionRulesDialog(collection_name, existing_rules)
             local value_text = rule.value or ""
             if rule.operator == OPERATORS.IS_EMPTY or rule.operator == OPERATORS.IS_NOT_EMPTY then
                 value_text = ""
+            elseif rule.field == "status" and READING_STATUSES[rule.value] then
+                -- Show translated status text instead of key
+                value_text = READING_STATUSES[rule.value]
             end
             
             table.insert(item_table, {
@@ -596,6 +627,48 @@ local function showSmartCollectionRulesDialog(collection_name, existing_rules)
         end
         
         local field_metadata = METADATA_FIELDS[field]
+        
+        -- For enum fields (like status), show a menu instead of text input
+        if field_metadata.enum then
+            local status_items = {}
+            for status_key, status_text in pairs(READING_STATUSES) do
+                table.insert(status_items, {
+                    text = status_text,
+                    callback = function()
+                        UIManager:close(status_menu)
+                        local new_rule = {
+                            field = field,
+                            operator = operator,
+                            value = status_key,
+                        }
+                        
+                        if rule_index then
+                            rules[rule_index] = new_rule
+                        else
+                            table.insert(rules, new_rule)
+                        end
+                        
+                        UIManager:close(rules_menu)
+                        rules_menu = Menu:new{
+                            title = _("Smart Collection Rules"),
+                            item_table = {},
+                            covers_fullscreen = true,
+                        }
+                        UIManager:show(rules_menu)
+                        updateRulesMenu()
+                    end,
+                })
+            end
+            
+            local status_menu = Menu:new{
+                title = T(_("Select %1"), field_metadata.text),
+                item_table = status_items,
+                covers_fullscreen = true,
+            }
+            UIManager:show(status_menu)
+            return
+        end
+        
         local input_hint = field_metadata.numeric and "123" or _("Enter value")
         
         -- Create dialog with buttons - value_dialog will be captured in closure
