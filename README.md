@@ -120,7 +120,13 @@ This enables detailed `logger.info` output (matched authors, rule checks, etc.).
 - Entering a collection shows all of its books; tapping opens the book instantly
 - Works with both Grid and List layouts, respects sorting/filtering
 - Automatically refreshes whenever collections change
-- Uses `icons/folder.collections.svg` if present (custom folder icon included in repo)
+- Uses `icons/folder.collections.svg` if present (custom folder icon included in repo), or uses `icons/folder.collections.svg` if present, otherwise displays books from the collections identical to Project Title display (grid or stack)
+- Each collection can have different png or svg icons by defining a `icons/_collection-name_.folder` SVG or PNG file.
+  - e.g. `icons/Favorites.folder.png`
+
+  ![In Home Folder](screenshots\Home-Folder.png)
+
+  ![Inside Collections Folder](screenshots\Collection-Folder.png)
 
 ### Installation
 
@@ -201,27 +207,32 @@ This patch modifies the `ptutil.good_serif` and `ptutil.good_sans` font paths th
 ### Recommended Fonts
 
 #### Highly Readable Fonts
+
 - **Atkinson Hyperlegible** - Designed for low vision readers
 - **OpenDyslexic** - Optimized for dyslexia
 - **Lexend** - Improves reading proficiency
 
 #### Clean Sans-Serif Fonts
+
 - **Inter** - Modern, excellent at small sizes
 - **Source Sans 3** - Adobe's workhorse
 - **Roboto** - Google's Material Design font
 
 #### Elegant Serif Fonts
+
 - **Source Serif 4** - Pairs with Source Sans
 - **Crimson Pro** - Classic book typography
 - **Literata** - Designed for e-readers
 
 ### Settings Storage
+
 - Font path: `custom_folder_font` in BookInfoManager
 - Size adjustment: `custom_folder_font_size` in BookInfoManager
 
 </details>
 
 **Note:** This patch only affects folder names in Project: Title. It does not change:
+
 - Book titles
 - UI fonts
 - Reader fonts
@@ -253,6 +264,7 @@ The patch works automatically - no configuration needed. When Calibre sends book
 ### Examples
 
 The patch automatically converts:
+
 - `Briendon Sandierson` → `Брендон Сандерсон`
 - `Dжордж Оруелл` → `Джордж Оруэлл`
 - `Pom Iu Dzhin` → `Пом Ю Джин`
@@ -263,6 +275,7 @@ The patch automatically converts:
 ### How It Works
 
 The patch automatically:
+
 1. **Detects transliterated Russian text** using common patterns (ch, sh, zh, ya, yu, etc.)
 2. **Converts using standard transliteration rules**:
    - Multi-character patterns: ch→ч, sh→ш, zh→ж, ya→я, yu→ю, etc.
