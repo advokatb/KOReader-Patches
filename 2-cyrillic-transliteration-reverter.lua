@@ -12,6 +12,8 @@
 --]]
 
 local Menu = require("ui/widget/menu")
+local BookList = require("ui/widget/booklist")
+local FileChooser = require("ui/widget/filechooser")
 local lfs = require("libs/libkoreader-lfs")
 local _getMenuText_orig = Menu.getMenuText
 
@@ -296,6 +298,52 @@ local function convert_transliteration(text)
     return text
 end
 
+-- Helper function to get transliterated text for sorting (without trailing slash)
+local function get_transliterated_sort_text(text)
+    if not text or type(text) ~= "string" then
+        return text
+    end
+    -- Remove trailing slash for sorting
+    local text_for_sort = text:gsub("/$", "")
+    local transliterated = convert_transliteration(text_for_sort)
+    -- Remove trailing slash if it was added back
+    return transliterated:gsub("/$", "")
+end
+
+-- Override FileChooser.getListItem to add sort_text for folders
+local _getListItem_orig = FileChooser.getListItem
+function FileChooser:getListItem(dirpath, f, fullpath, attributes, collate)
+    local item = _getListItem_orig(self, dirpath, f, fullpath, attributes, collate)
+    
+    -- Add sort_text for folders (directories) to enable proper sorting with transliteration
+    if item and not item.is_file then
+        local is_directory = false
+        if item.path then
+            local mode = lfs.attributes(item.path, "mode")
+            is_directory = mode == "directory"
+        elseif item.file then
+            local mode = lfs.attributes(item.file, "mode")
+            is_directory = mode == "directory"
+        elseif item.text and item.text:match("/$") then
+            is_directory = true
+        end
+        
+        if is_directory then
+            local original_text = item.text:gsub("/$", "")  -- Remove trailing slash
+            local skip_transliteration = is_virtual_collections_entry(item, item.text)
+            if not skip_transliteration then
+                -- Create sort_text with transliterated version for proper sorting
+                item.sort_text = get_transliterated_sort_text(original_text)
+            else
+                -- For virtual collections, use original text for sorting
+                item.sort_text = original_text
+            end
+        end
+    end
+    
+    return item
+end
+
 -- Override the getMenuText function
 Menu.getMenuText = function(item)
     local menu_text = _getMenuText_orig(item)
@@ -326,4 +374,32 @@ Menu.getMenuText = function(item)
         end
     end
     return menu_text
+end
+
+-- Modify collates to use sort_text for sorting if available
+-- This ensures folders are sorted by their transliterated (Cyrillic) names
+local ffiUtil = require("ffi/util")
+for collate_name, collate in pairs(BookList.collates) do
+    if collate.init_sort_func then
+        local orig_init_sort_func = collate.init_sort_func
+        collate.init_sort_func = function(cache)
+            local orig_sort_func, new_cache = orig_init_sort_func(cache)
+            return function(a, b)
+                -- Temporarily replace text with sort_text for folders that have it
+                -- This allows sorting to use transliterated (Cyrillic) names
+                local orig_text_a, orig_text_b = a.text, b.text
+                if a.sort_text then
+                    a.text = a.sort_text
+                end
+                if b.sort_text then
+                    b.text = b.sort_text
+                end
+                local result = orig_sort_func(a, b)
+                -- Restore original text
+                a.text = orig_text_a
+                b.text = orig_text_b
+                return result
+            end, new_cache
+        end
+    end
 end

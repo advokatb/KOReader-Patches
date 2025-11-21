@@ -125,9 +125,9 @@ This enables detailed `logger.info` output (matched authors, rule checks, etc.).
 - Each collection can have different png or svg icons by defining a `icons/_collection-name_.folder` SVG or PNG file.
   - e.g. `icons/Favorites.folder.png`
 
-  ![In Home Folder](screenshots/Home-Folder.png)
+  ![In Home Folder](screenshots\Home-Folder.png)
 
-  ![Inside Collections Folder](screenshots/Collection-Folder.png)
+  ![Inside Collections Folder](screenshots\Collection-Folder.png)
 
 ### Installation
 
@@ -212,32 +212,27 @@ This patch modifies the `ptutil.good_serif` and `ptutil.good_sans` font paths th
 ### Recommended Fonts
 
 #### Highly Readable Fonts
-
 - **Atkinson Hyperlegible** - Designed for low vision readers
 - **OpenDyslexic** - Optimized for dyslexia
 - **Lexend** - Improves reading proficiency
 
 #### Clean Sans-Serif Fonts
-
 - **Inter** - Modern, excellent at small sizes
 - **Source Sans 3** - Adobe's workhorse
 - **Roboto** - Google's Material Design font
 
 #### Elegant Serif Fonts
-
 - **Source Serif 4** - Pairs with Source Sans
 - **Crimson Pro** - Classic book typography
 - **Literata** - Designed for e-readers
 
 ### Settings Storage
-
 - Font path: `custom_folder_font` in BookInfoManager
 - Size adjustment: `custom_folder_font_size` in BookInfoManager
 
 </details>
 
 **Note:** This patch only affects folder names in Project: Title. It does not change:
-
 - Book titles
 - UI fonts
 - Reader fonts
@@ -256,6 +251,7 @@ This patch modifies the `ptutil.good_serif` and `ptutil.good_sans` font paths th
 - **File manager only**: Only affects folder names in file manager, not other menus
 - **Smart detection**: Only processes text that looks like transliterated Russian
 - **Virtual collections support**: Excludes virtual Collections folder from transliteration
+- **Proper sorting**: Folders are sorted by their Cyrillic (transliterated) names, ensuring correct alphabetical order
 
 ### Installation
 
@@ -269,7 +265,6 @@ The patch works automatically - no configuration needed. When Calibre sends book
 ### Examples
 
 The patch automatically converts:
-
 - `Briendon Sandierson` → `Брендон Сандерсон`
 - `Dжордж Оруелл` → `Джордж Оруэлл`
 - `Pom Iu Dzhin` → `Пом Ю Джин`
@@ -280,7 +275,6 @@ The patch automatically converts:
 ### How It Works
 
 The patch automatically:
-
 1. **Detects transliterated Russian text** using common patterns (ch, sh, zh, ya, yu, etc.)
 2. **Converts using standard transliteration rules**:
    - Multi-character patterns: ch→ч, sh→ш, zh→ж, ya→я, yu→ю, etc.
@@ -288,3 +282,11 @@ The patch automatically:
 3. **Preserves folder structure** (keeps trailing slashes for folders)
 4. **Only processes text that looks like transliterated Russian** - English text is left unchanged
 5. **Excludes virtual Collections folder** - The virtual Collections folder injected by `2-pt-collections.lua` is not transliterated
+6. **Enables proper sorting** - Creates transliterated sort keys for folders, so they are sorted alphabetically by their Cyrillic names rather than Latin transliteration
+
+### Sorting
+
+The patch modifies KOReader's sorting functions to use transliterated (Cyrillic) names for sorting folders. This ensures that:
+- Folders like "Briendon Sandierson" are sorted as "Брендон Сандерсон" in the correct Cyrillic alphabetical position
+- All sorting modes (name, natural sorting, etc.) respect the transliterated order
+- Mixed folders (some transliterated, some not) are sorted correctly
