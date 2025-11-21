@@ -38,7 +38,8 @@ local function patchProjectTitleCollections()
 
     local COLLECTIONS_SYMBOL = "\u{272A}"
     local COLLECTIONS_SEGMENT = COLLECTIONS_SYMBOL .. " " .. _("Collections")
-    local root_icon_path = DataStorage:getDataDir() .. "/icons/folder.collections.png"
+    local root_icon_png_path = DataStorage:getDataDir() .. "/icons/folder.collections.png"
+    local root_icon_svg_path = DataStorage:getDataDir() .. "/icons/folder.collections.svg"
 
     local SHOW_FAVORITES_COLLECTION = false
 
@@ -334,9 +335,107 @@ local function patchProjectTitleCollections()
         return files
     end
 
+    -- Store the filemanager display mode when entering collections view
+    local saved_filemanager_mode = nil
+    local currently_in_collections = false
+    
+    -- This function switches display mode WITHOUT saving to settings
+    local function applyDisplayModeTemporarily(target_mode)
+        if not target_mode then
+            return
+        end
+        
+        local FileManager = require("apps/filemanager/filemanager")
+        if not FileManager.instance or not FileManager.instance.coverbrowser then
+            return
+        end
+        
+        local coverbrowser = FileManager.instance.coverbrowser
+        
+        -- We need to restore the setting after CoverBrowser switches mode
+        -- because setupFileManagerDisplayMode saves the mode to DB
+        local original_saved_setting = BookInfoManager:getSetting("filemanager_display_mode")
+        
+        -- Call the original setup function (which will change the mode and save it)
+        coverbrowser:setupFileManagerDisplayMode(target_mode)
+        
+        -- Immediately restore the original setting in the DB (without changing the UI)
+        if original_saved_setting then
+            BookInfoManager:saveSetting("filemanager_display_mode", original_saved_setting)
+        end
+    end
+    
+    local function switchToCollectionsDisplayMode(file_chooser)
+        if currently_in_collections then
+            return
+        end
+        
+        -- Save current filemanager display mode FROM THE DB
+        saved_filemanager_mode = BookInfoManager:getSetting("filemanager_display_mode")
+        
+        currently_in_collections = true
+        
+        -- Get collections display mode
+        local collections_mode = BookInfoManager:getSetting("collection_display_mode")
+        
+        if collections_mode and collections_mode ~= saved_filemanager_mode then
+            applyDisplayModeTemporarily(collections_mode)
+        end
+    end
+    
+    local function restoreFileManagerDisplayMode()
+        if not currently_in_collections then
+            return
+        end
+        
+        currently_in_collections = false
+        
+        -- Restore saved filemanager display mode
+        if saved_filemanager_mode then
+            applyDisplayModeTemporarily(saved_filemanager_mode)
+            
+            -- After restoring mode, refresh the path to ensure Collections folder appears
+            local UIManager = require("ui/uimanager")
+            UIManager:nextTick(function()
+                local FileManager = require("apps/filemanager/filemanager")
+                if FileManager.instance and FileManager.instance.file_chooser then
+                    local fc = FileManager.instance.file_chooser
+                    local current_path = fc.path
+                    
+                    if current_path then
+                        local normalized = normalizeVirtualPath(current_path)
+                        local is_home = isHomePath(normalized)
+                        
+                        if is_home then
+                            -- Use changeToPath to ensure proper path handling
+                            if fc.changeToPath then
+                                fc:changeToPath(current_path)
+                            elseif fc.refreshPath then
+                                fc:refreshPath()
+                            end
+                        end
+                    end
+                end
+            end)
+            
+            saved_filemanager_mode = nil
+        end
+    end
+
     local orig_genItemTableFromPath = FileChooser.genItemTableFromPath
     function FileChooser:genItemTableFromPath(path)
         if self.name ~= "filemanager" then return orig_genItemTableFromPath(self, path) end
+        
+        -- Check if we're entering or leaving collections view
+        local entering_collections = containsCollectionsSegment(path)
+        local leaving_collections = currently_in_collections and not entering_collections
+        
+        if entering_collections then
+            switchToCollectionsDisplayMode(self)
+        elseif leaving_collections then
+            restoreFileManagerDisplayMode()
+        end
+        
         if isCollectionsRoot(path) then
             local dirs = buildCollectionDirItems(self, path)
             if #dirs == 0 then
@@ -366,47 +465,85 @@ local function patchProjectTitleCollections()
         return count
     end
 
-    local orig_genItemTable = FileChooser.genItemTable
-    function FileChooser:genItemTable(dirs, files, path)
+    -- Function to inject Collections folder into item table
+    local function injectCollectionsFolder(self, dirs, files, path, item_table)
         local current_path = path or self.path
-        if not current_path then return orig_genItemTable(self, dirs, files, path) end
+        if not current_path then
+            return item_table
+        end
+        
         local normalized_path = normalizeVirtualPath(current_path)
         local visible_collections_count = countVisibleCollections()
+        local is_in_collections = containsCollectionsSegment(current_path)
+        local is_home = isHomePath(normalized_path)
         local should_inject = self.name == "filemanager"
-            and not containsCollectionsSegment(current_path)
+            and not is_in_collections
             and visible_collections_count > 0
-            and isHomePath(normalized_path)
-
-        local virtual_path
-        if should_inject then
-            dirs = dirs or {}
-            local collate = self:getCollate()
-            local fake_attributes = { mode = "directory", size = visible_collections_count, modification = 0 }
-            virtual_path = appendPath(current_path, COLLECTIONS_SEGMENT)
-            local entry = self:getListItem(nil, COLLECTIONS_SEGMENT, virtual_path, fake_attributes, collate)
-            entry.is_directory = true
-            entry.is_pt_collections_entry = true
-            table.insert(dirs, entry)
+            and is_home
+        
+        if not should_inject then
+            return item_table
         end
-
-        local item_table = orig_genItemTable(self, dirs, files, path)
-
-        if should_inject and item_table then
-            local idx
-            for i, item in ipairs(item_table) do
-                if item.path == virtual_path then
-                    idx = i; break
-                end
-            end
-            if idx then
-                local entry = table.remove(item_table, idx)
-                local insert_pos = 1
-                if item_table[1] and item_table[1].is_go_up then insert_pos = 2 end
-                table.insert(item_table, insert_pos, entry)
+        
+        local virtual_path = appendPath(current_path, COLLECTIONS_SEGMENT)
+        local collate = self:getCollate()
+        local fake_attributes = {
+            mode = "directory",
+            size = visible_collections_count,
+            modification = 0,
+        }
+        local entry = self:getListItem(nil, COLLECTIONS_SEGMENT, virtual_path, fake_attributes, collate)
+        entry.is_directory = true
+        entry.is_pt_collections_entry = true
+        
+        -- Find if Collections folder already exists in item_table
+        local idx = nil
+        for i, item in ipairs(item_table) do
+            if item.path == virtual_path then
+                idx = i
+                break
             end
         end
+        
+        if idx then
+            -- Remove existing entry and reinsert at correct position
+            entry = table.remove(item_table, idx)
+        end
+        
+        -- Insert at correct position (after ".." if present)
+        local insert_pos = 1
+        if item_table[1] and item_table[1].is_go_up then
+            insert_pos = 2
+        end
+        table.insert(item_table, insert_pos, entry)
+        
         return item_table
     end
+    
+    -- Wrap CoverMenu.genItemTable if it exists (Project: Title mode)
+    local function wrapCoverMenuGenItemTable()
+        local ok, CoverMenu = pcall(require, "covermenu")
+        if ok and CoverMenu and CoverMenu.genItemTable then
+            local orig_CoverMenu_genItemTable = CoverMenu.genItemTable
+            CoverMenu.genItemTable = function(self, dirs, files, path)
+                local item_table = orig_CoverMenu_genItemTable(self, dirs, files, path)
+                return injectCollectionsFolder(self, dirs, files, path, item_table)
+            end
+        end
+    end
+    
+    -- Wrap original FileChooser.genItemTable as fallback
+    local orig_genItemTable = FileChooser.genItemTable
+    function FileChooser:genItemTable(dirs, files, path)
+        local item_table = orig_genItemTable(self, dirs, files, path)
+        return injectCollectionsFolder(self, dirs, files, path, item_table)
+    end
+    
+    -- Try to wrap CoverMenu.genItemTable after Project: Title loads
+    local UIManager = require("ui/uimanager")
+    UIManager:nextTick(function()
+        wrapCoverMenuGenItemTable()
+    end)
 
     if not ptutil._collections_icon_patch_applied then
         ptutil._collections_icon_patch_applied = true
@@ -418,8 +555,11 @@ local function patchProjectTitleCollections()
                 local is_png = false
 
                 if isCollectionsRoot(filepath) then
-                    if util.fileExists(root_icon_path) then
-                        found_icon = root_icon_path
+                    if util.fileExists(root_icon_svg_path) then
+                        found_icon = root_icon_svg_path
+                        is_png = false
+                    elseif util.fileExists(root_icon_png_path) then
+                        found_icon = root_icon_png_path
                         is_png = true
                     end
                 else
@@ -479,17 +619,31 @@ local function patchProjectTitleCollections()
 
     local orig_changeToPath = FileChooser.changeToPath
     function FileChooser:changeToPath(path, focused_path)
-        if self.name == "filemanager" and containsCollectionsSegment(path) then
-            path = normalizeVirtualPath(path)
-            if path == "" then path = "/" end
-            self.path = path
-            if focused_path then self.focused_path = focused_path end
-            self:refreshPath()
-            return
+        if self.name == "filemanager" then
+            local entering_collections = containsCollectionsSegment(path)
+            local leaving_collections = currently_in_collections and not entering_collections
+            
+            if entering_collections then
+                switchToCollectionsDisplayMode(self)
+            elseif leaving_collections then
+                restoreFileManagerDisplayMode()
+            end
+            
+            if entering_collections then
+                path = normalizeVirtualPath(path)
+                if path == "" then
+                    path = "/"
+                end
+                self.path = path
+                if focused_path then
+                    self.focused_path = focused_path
+                end
+                self:refreshPath()
+                return
+            end
         end
         return orig_changeToPath(self, path, focused_path)
     end
-
     logger.info("Project: Title collections view patch applied")
 end
 

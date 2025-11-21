@@ -119,14 +119,15 @@ This enables detailed `logger.info` output (matched authors, rule checks, etc.).
 - Lists every KOReader collection as a folder with book counts
 - Entering a collection shows all of its books; tapping opens the book instantly
 - Works with both Grid and List layouts, respects sorting/filtering
+- **Automatic display mode switching**: Applies your Project: Title "Collections display mode" setting when viewing collections, and restores your regular file browser mode when exiting
 - Automatically refreshes whenever collections change
 - Uses `icons/folder.collections.svg` if present (custom folder icon included in repo), or uses `icons/folder.collections.svg` if present, otherwise displays books from the collections identical to Project Title display (grid or stack)
 - Each collection can have different png or svg icons by defining a `icons/_collection-name_.folder` SVG or PNG file.
   - e.g. `icons/Favorites.folder.png`
 
-  ![In Home Folder](screenshots\Home-Folder.png)
+  ![In Home Folder](screenshots/Home-Folder.png)
 
-  ![Inside Collections Folder](screenshots\Collection-Folder.png)
+  ![Inside Collections Folder](screenshots/Collection-Folder.png)
 
 ### Installation
 
@@ -136,9 +137,13 @@ This enables detailed `logger.info` output (matched authors, rule checks, etc.).
 ### Usage
 
 1. Open File Manager (Project: Title must be enabled)
-2. In any directory, tap the `✪ Collections` entry that appears alongside your folders
-3. Pick a collection folder to see the books it contains
-4. Tap a book to open it, or use KOReader’s standard long-press actions
+2. In your home directory, tap the `✪ Collections` entry that appears at the top of the list
+3. The view automatically switches to your configured "Collections display mode"
+4. Pick a collection folder to see the books it contains
+5. Tap a book to open it, or use KOReader's standard long-press actions
+6. When you navigate out, the view automatically returns to your normal file browser display mode
+
+**Tip:** You can configure the Collections display mode separately from your file browser mode in **Menu → Project: Title settings → Collections display mode** (Cover Grid, Cover List, Details List, or Filenames List).
 
 ### Configuration
 
