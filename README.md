@@ -125,9 +125,9 @@ This enables detailed `logger.info` output (matched authors, rule checks, etc.).
 - Each collection can have different png or svg icons by defining a `icons/_collection-name_.folder` SVG or PNG file.
   - e.g. `icons/Favorites.folder.png`
 
-  ![In Home Folder](screenshots\Home-Folder.png)
+  ![In Home Folder](screenshots/Home-Folder.png)
 
-  ![Inside Collections Folder](screenshots\Collection-Folder.png)
+  ![Inside Collections Folder](screenshots/Collection-Folder.png)
 
 ### Installation
 
