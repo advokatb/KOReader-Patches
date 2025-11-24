@@ -109,6 +109,61 @@ This enables detailed `logger.info` output (matched authors, rule checks, etc.).
 
 ---
 
+## 🞂 [2-pt-metadata-browser.lua](2-pt-metadata-browser.lua)
+
+**Metadata Browser for Project: Title** – adds a virtual "📚 Metadata" folder to the Project: Title file browser, allowing you to browse books by metadata (authors, series, genres, publication year, etc.) extracted from Calibre's book database.
+
+### Features
+
+- Adds a global `📚 Metadata` entry to File Manager (Project: Title modes)
+- Browse books by **Authors**, **Series**, **Genres**, **Year**, and **Title**
+- **Genres and Years** are automatically extracted from Calibre's `keywords` field
+  - Pure numbers (e.g., "2023", "1999") are treated as years
+  - Values containing letters (e.g., "Fantasy", "Sci-Fi") are treated as genres
+- **Book count display**: Optionally show number of books next to each metadata value
+- **Configurable**: Enable/disable individual metadata types, customize display order, filter genres, and more
+- Uses book covers for metadata folder icons (stacked or grid layout)
+
+### Installation
+
+1. Copy `2-pt-metadata-browser.lua` to `koreader/patches/`
+2. Restart KOReader
+
+### Usage
+
+1. Open File Manager (Project: Title must be enabled)
+2. In your home directory, tap the `📚 Metadata` entry that appears at the top of the list
+3. Select a metadata type (e.g., Author, Series, Genres, Year)
+4. Choose a value from the list (e.g., an author name, genre, or year)
+
+### Configuration
+
+All settings are at the top of `2-pt-metadata-browser.lua` in the `CONFIGURATION SETTINGS` section:
+
+- **Enable/disable metadata types**: Set `CONFIG_ENABLE_TITLE`, `CONFIG_ENABLE_AUTHOR`, `CONFIG_ENABLE_SERIES`, `CONFIG_ENABLE_GENRES`, `CONFIG_ENABLE_YEAR` to `false` to hide specific types
+- **Custom display order**: Set `CONFIG_METADATA_ORDER = {"AUTHOR", "SERIES", "GENRES", "YEAR", "TITLE"}` to customize the order
+- **Show book counts**: Set `CONFIG_SHOW_BOOK_COUNT = true` to display "(N)" next to each value
+- **Hide empty values**: Set `CONFIG_HIDE_EMPTY_VALUES = true` (default) to filter out empty/null metadata
+- **Genre filtering**: Use `CONFIG_GENRE_WHITELIST` and `CONFIG_GENRE_BLACKLIST` to control which genres are shown
+- **Case sensitivity**: Set `CONFIG_CASE_SENSITIVE_GENRES = true` for case-sensitive genre matching
+- **Custom symbols**: Override default icons for each metadata type using `CONFIG_TITLE_SYMBOL`, `CONFIG_AUTHOR_SYMBOL`, etc.
+
+### Database
+
+The patch reads metadata from KOReader's bookinfo cache database:
+- **Project: Title**: `DataStorage:getSettingsDir() .. "/PT_bookinfo_cache.sqlite3"`
+- **CoverBrowser**: `DataStorage:getSettingsDir() .. "/coverbrowser_bookinfo_cache.sqlite3"`
+
+The `keywords` field in the `bookinfo` table contains newline-separated values (genres, years, etc.) that are automatically parsed and categorized.
+
+### Notes
+
+- The virtual entry is shown only at the top level (home folder) to keep subfolders uncluttered
+- The virtual folder exists only inside the UI; no files/folders are created on disk
+- Based on `2-pt-collections.lua` (virtual folder structure) and `2-BrowseByMetadata.lua` (metadata browsing functionality)
+
+---
+
 ## 🞂 [2-pt-collections.lua](2-pt-collections.lua)
 
 **Collections View for Project: Title** – adds a virtual “✪ Collections” folder inside the Project: Title file browser so you can browse KOReader collections as if they were directories.
