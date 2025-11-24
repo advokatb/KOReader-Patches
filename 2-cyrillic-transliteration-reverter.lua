@@ -18,9 +18,14 @@ local lfs = require("libs/libkoreader-lfs")
 local _getMenuText_orig = Menu.getMenuText
 
 -- Virtual Collections folder injected by 2-pt-collections.lua
--- uses the 📪 star symbol as part of its segment name. We keep it as-is.
+-- uses the ✪ star symbol as part of its segment name. We keep it as-is.
 local COLLECTIONS_SYMBOL = "\u{272A}"
 local COLLECTIONS_SEGMENT = COLLECTIONS_SYMBOL .. " "
+
+-- Virtual Metadata folder injected by 2-pt-metadata-collections.lua
+-- uses the 📚 metadata symbol as part of its segment name. We keep it as-is.
+local METADATA_SYMBOL = "\u{e257}"
+local METADATA_SEGMENT = METADATA_SYMBOL .. " "
 
 local function is_virtual_collections_entry(item, menu_text)
     if not item then
@@ -37,6 +42,27 @@ local function is_virtual_collections_entry(item, menu_text)
         return true
     end
     return false
+end
+
+local function is_virtual_metadata_entry(item, menu_text)
+    if not item then
+        return false
+    end
+    if item.is_pt_metadata_entry then
+        return true
+    end
+    -- Fall back to checking path/text for the special segment if the flag isn't available
+    if item.path and item.path:find(METADATA_SEGMENT, 1, true) then
+        return true
+    end
+    if menu_text and menu_text:find(METADATA_SEGMENT, 1, true) then
+        return true
+    end
+    return false
+end
+
+local function is_virtual_folder_entry(item, menu_text)
+    return is_virtual_collections_entry(item, menu_text) or is_virtual_metadata_entry(item, menu_text)
 end
 
 -- Function to automatically convert transliterated text to Cyrillic
@@ -330,12 +356,12 @@ function FileChooser:getListItem(dirpath, f, fullpath, attributes, collate)
         
         if is_directory then
             local original_text = item.text:gsub("/$", "")  -- Remove trailing slash
-            local skip_transliteration = is_virtual_collections_entry(item, item.text)
+            local skip_transliteration = is_virtual_folder_entry(item, item.text)
             if not skip_transliteration then
                 -- Create sort_text with transliterated version for proper sorting
                 item.sort_text = get_transliterated_sort_text(original_text)
             else
-                -- For virtual collections, use original text for sorting
+                -- For virtual folders (Collections/Metadata), use original text for sorting
                 item.sort_text = original_text
             end
         end
@@ -368,7 +394,7 @@ Menu.getMenuText = function(item)
             end
         end
         
-        local skip_transliteration = is_virtual_collections_entry(item, menu_text)
+        local skip_transliteration = is_virtual_folder_entry(item, menu_text)
         if is_directory and not skip_transliteration then
             menu_text = convert_transliteration(menu_text)
         end

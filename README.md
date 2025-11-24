@@ -250,7 +250,7 @@ This patch modifies the `ptutil.good_serif` and `ptutil.good_sans` font paths th
 - **Comprehensive rules**: Based on ISO 9 (GOST 7.79-2000), ALA-LC, and common transliteration patterns
 - **File manager only**: Only affects folder names in file manager, not other menus
 - **Smart detection**: Only processes text that looks like transliterated Russian
-- **Virtual collections support**: Excludes virtual Collections folder from transliteration
+- **Virtual folders support**: Excludes virtual Collections and Metadata folders from transliteration
 - **Proper sorting**: Folders are sorted by their Cyrillic (transliterated) names, ensuring correct alphabetical order
 
 ### Installation
@@ -281,7 +281,7 @@ The patch automatically:
    - Single character patterns: a→а, b→б, v→в, g→г, etc.
 3. **Preserves folder structure** (keeps trailing slashes for folders)
 4. **Only processes text that looks like transliterated Russian** - English text is left unchanged
-5. **Excludes virtual Collections folder** - The virtual Collections folder injected by `2-pt-collections.lua` is not transliterated
+5. **Excludes virtual folders** - Virtual folders (Collections and Metadata) injected by `2-pt-collections.lua` and `2-pt-metadata-collections.lua` are not transliterated
 6. **Enables proper sorting** - Creates transliterated sort keys for folders, so they are sorted alphabetically by their Cyrillic names rather than Latin transliteration
 
 ### Sorting
