@@ -90,6 +90,12 @@ local function patchProjectTitleFolderFonts(plugin)
         if menu_items.filemanager_display_mode and menu_items.filemanager_display_mode.sub_item_table then
             for i, item in ipairs(menu_items.filemanager_display_mode.sub_item_table) do
                 if item.text == _("Advanced settings") and item.sub_item_table then
+                    -- Check if "Folder Fonts" already exists to prevent duplicates on resume
+                    for _, sub_item in ipairs(item.sub_item_table) do
+                        if sub_item.text == "Folder Fonts" then
+                            return  -- Already added, skip
+                        end
+                    end
                     -- Add new Fonts section
                     table.insert(item.sub_item_table, {
                         text = "Folder Fonts",
