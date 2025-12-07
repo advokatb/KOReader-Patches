@@ -8,11 +8,13 @@
     Database location:
     - Project: Title: DataStorage:getSettingsDir() .. "/PT_bookinfo_cache.sqlite3"
     - CoverBrowser: DataStorage:getSettingsDir() .. "/coverbrowser_bookinfo_cache.sqlite3"
-    - Statistics: DataStorage:getSettingsDir() .. "/statistics.sqlite3"
     
     Database schema (bookinfo table):
     - directory, filename, title, authors, series, language, keywords, description, pages, etc.
-    - Keywords field contains newline-separated values (genres, years, etc.)
+    - Keywords field contains newline-separated values (genres, tags from Calibre)
+    
+    IMPORTANT: KOReader does NOT store publication date (dc:date) from book metadata.
+    Year browsing only works if years are added as tags in Calibre's keywords field.
     
     Based on:
     - patches/KOReader-advokatb-patches/2-pt-collections.lua (virtual folder structure)
@@ -911,12 +913,20 @@ userpatch.registerPatchPluginFunc("coverbrowser", function(CoverBrowser)
         GENRE_BLACKLIST = {},
     }
 
+    -- Check if value is a valid publication year (4-digit number between 1800-2100)
+    -- This filters out random numbers that might appear in keywords/tags
     local function isYear(value)
         if not value or type(value) ~= "string" then
             return false
         end
         value = value:match("^%s*(.-)%s*$")
-        return value:match("^%d+$") ~= nil
+        -- Must be exactly 4 digits
+        if not value:match("^%d%d%d%d$") then
+            return false
+        end
+        local year = tonumber(value)
+        -- Valid publication year range: 1800-2100
+        return year and year >= 1800 and year <= 2100
     end
     
     local function shouldShowGenre(genre, whitelist, blacklist, case_sensitive)
