@@ -345,6 +345,8 @@ You can use a custom SVG icon for the spine effect:
 - Effect is always enabled (no on/off toggle)
 - Inspired by [this issue](https://github.com/SeriousHornet/KOReader.patches/issues/8) by [@eduardorodrigues08](https://github.com/eduardorodrigues08)
 
+  ![In Home Folder](screenshots/pt-book-spine-effect.png)
+
 ---
 
 ## 🞂 [2-cyrillic-transliteration-reverter.lua](2-cyrillic-transliteration-reverter.lua)
