@@ -295,6 +295,58 @@ This patch modifies the `ptutil.good_serif` and `ptutil.good_sans` font paths th
 
 ---
 
+## 🞂 [2-pt-book-spine-effect.lua](2-pt-book-spine-effect.lua)
+
+**Book Spine Effect (Apple Books style)** - Adds a pressed book spine shadow effect to book covers in Project: Title view, similar to Apple Books.
+
+### Features
+
+- **Apple Books-style effect**: Creates a subtle shadow/gradient along the left edge of book covers to simulate a pressed spine
+- **SVG support**: Uses custom SVG icon (`book.spine.svg`) if available in `icons/` folder, otherwise uses programmatic gradient
+- **Fully configurable**: Three adjustable settings for shadow width, intensity, and offset from edge
+- **Automatic scaling**: SVG icon automatically scales to match cover height
+- **Works with all covers**: Applies to all book covers in Project: Title view
+
+### Installation
+
+1. Copy `2-pt-book-spine-effect.lua` to `koreader/patches/` folder
+2. (Optional) Copy `icons/book.spine.svg` to `koreader/icons/` for custom SVG effect
+3. Restart KOReader
+
+### Usage
+
+The effect is automatically applied to all book covers. Configure it via:
+
+1. Open **File Manager**
+2. Tap **⚙ Settings** → **File browser settings**
+3. Navigate to **Project: Title Settings** → **Advanced settings** → **Book Spine Effect**
+4. Adjust settings:
+   - **Shadow width**: Small, Medium, Large, Extra Large
+   - **Shadow intensity**: Light, Medium, Dark, Very Dark
+   - **Offset from edge**: Small, Medium, Large, Extra Large
+
+### Custom SVG Icon
+
+You can use a custom SVG icon for the spine effect:
+
+1. Create or edit `book.spine.svg` in `koreader/icons/` folder
+2. The SVG should be vertical (height > width) with a gradient from dark (left) to transparent (right)
+3. The icon will automatically scale to match cover height
+
+### Settings Storage
+
+- Shadow width: `pt_spine_shadow_width` in BookInfoManager
+- Shadow intensity: `pt_spine_shadow_intensity` in BookInfoManager
+- Left offset: `pt_spine_left_offset` in BookInfoManager
+
+### Notes
+
+- Only affects book covers, not folders
+- Effect is always enabled (no on/off toggle)
+- Inspired by [this issue](https://github.com/SeriousHornet/KOReader.patches/issues/8) by [@eduardorodrigues08](https://github.com/eduardorodrigues08)
+
+---
+
 ## 🞂 [2-cyrillic-transliteration-reverter.lua](2-cyrillic-transliteration-reverter.lua)
 
 **Cyrillic Transliteration Reverter** - Automatically converts transliterated text back to Cyrillic for folder names displayed by Project: Title plugin in file manager only.
