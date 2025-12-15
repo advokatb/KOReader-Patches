@@ -306,7 +306,12 @@ local function patchProjectTitleCollections()
             end
             local count = util.tableSize(coll)
             local display = string.format("%s (%d)", name, count)
-            local fake_attributes = { mode = "directory", size = count, modification = 0 }
+            local fake_attributes = {
+                mode = "directory",
+                size = count,
+                modification = 0,
+                access = 0,  -- Required for "last read date" sorting
+            }
             local item_path = appendPath(path, encodeSegment(name))
             local entry = self:getListItem(nil, display, item_path, fake_attributes, collate)
             entry.is_directory = true
@@ -441,7 +446,11 @@ local function patchProjectTitleCollections()
             if #dirs == 0 then
                 local collate = self:getCollate()
                 local empty_item = self:getListItem(nil, _("No collections yet"), appendPath(path, "."),
-                    { mode = "directory" }, collate)
+                    {
+                        mode = "directory",
+                        modification = 0,
+                        access = 0,  -- Required for "last read date" sorting
+                    }, collate)
                 empty_item.dim = true
                 dirs = { empty_item }
             end
@@ -491,6 +500,7 @@ local function patchProjectTitleCollections()
             mode = "directory",
             size = visible_collections_count,
             modification = 0,
+            access = 0,  -- Required for "last read date" sorting
         }
         local entry = self:getListItem(nil, COLLECTIONS_SEGMENT, virtual_path, fake_attributes, collate)
         entry.is_directory = true
