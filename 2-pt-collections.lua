@@ -297,6 +297,19 @@ local function patchProjectTitleCollections()
         return path and path:find("/" .. COLLECTIONS_SEGMENT_PATTERN)
     end
 
+    local function getCollectionLastAccessTime(collection)
+        -- Find the most recent access time among all books in the collection
+        local max_access = 0
+        for _, entry in pairs(collection) do
+            if entry.attr and entry.attr.access then
+                if entry.attr.access > max_access then
+                    max_access = entry.attr.access
+                end
+            end
+        end
+        return max_access
+    end
+
     local function buildCollectionDirItems(self, path)
         local dirs = {}
         local collate = self:getCollate()
@@ -306,11 +319,13 @@ local function patchProjectTitleCollections()
             end
             local count = util.tableSize(coll)
             local display = string.format("%s (%d)", name, count)
+            -- Get the most recent access time from books in this collection
+            local last_access = getCollectionLastAccessTime(coll)
             local fake_attributes = {
                 mode = "directory",
                 size = count,
                 modification = 0,
-                access = 0,  -- Required for "last read date" sorting
+                access = last_access,  -- Use most recent book's access time for sorting
             }
             local item_path = appendPath(path, encodeSegment(name))
             local entry = self:getListItem(nil, display, item_path, fake_attributes, collate)
@@ -474,6 +489,20 @@ local function patchProjectTitleCollections()
         return count
     end
 
+    local function getAllCollectionsLastAccessTime()
+        -- Find the most recent access time across all visible collections
+        local max_access = 0
+        for name, coll in pairs(ReadCollection.coll) do
+            if SHOW_FAVORITES_COLLECTION or name:lower() ~= ReadCollection.default_collection_name:lower() then
+                local coll_access = getCollectionLastAccessTime(coll)
+                if coll_access > max_access then
+                    max_access = coll_access
+                end
+            end
+        end
+        return max_access
+    end
+
     -- Function to inject Collections folder into item table
     local function injectCollectionsFolder(self, dirs, files, path, item_table)
         local current_path = path or self.path
@@ -496,11 +525,13 @@ local function patchProjectTitleCollections()
         
         local virtual_path = appendPath(current_path, COLLECTIONS_SEGMENT)
         local collate = self:getCollate()
+        -- Use most recent access time from all collections for sorting
+        local last_access = getAllCollectionsLastAccessTime()
         local fake_attributes = {
             mode = "directory",
             size = visible_collections_count,
             modification = 0,
-            access = 0,  -- Required for "last read date" sorting
+            access = last_access,  -- Use most recent collection's access time for sorting
         }
         local entry = self:getListItem(nil, COLLECTIONS_SEGMENT, virtual_path, fake_attributes, collate)
         entry.is_directory = true

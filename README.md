@@ -208,6 +208,7 @@ The `keywords` field in the `bookinfo` table contains newline-separated values (
 
 - The virtual entry is shown only at the top level (home folder) to keep subfolders uncluttered
 - The virtual folder exists only inside the UI; no files/folders are created on disk
+- When sorting by "last read date", collections are ordered based on the most recently accessed book within each collection
 
 ---
 
