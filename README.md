@@ -348,6 +348,46 @@ You can use a custom SVG icon for the spine effect:
 
   ![In Home Folder](screenshots/pt-book-spine-effect.png)
 
+
+---
+
+## 🞂 [2-pt-filter-folders-by-status.lua](2-pt-filter-folders-by-status.lua)
+
+**Filter Folders by Book Status** - Automatically hides folders that don't contain books matching your active book status filter (New, Reading, On hold, Finished) in Project: Title file browser.
+
+### Features
+
+- **Automatic folder filtering**: When you filter books by status, folders with no matching books are automatically hidden
+- **Recursive scanning**: Checks subdirectories to ensure parent folders with matching books deep inside remain visible
+- **Auto-loads on startup**: Remembers and applies your last filter selection when KOReader starts
+
+### Installation
+
+1. Copy `2-pt-filter-folders-by-status.lua` to `koreader/patches/` folder
+2. Restart KOReader
+
+### Usage
+
+1. Open **File Manager** (Project: Title must be enabled)
+2. Tap **⚙ Settings** → **File browser settings** → **Book status**
+3. Select a status filter (e.g., "New", "Reading")
+4. Navigate to your books folder - only folders containing books with the selected status will be visible
+5. To see all folders again, select "All" in the Book status filter
+
+### How It Works
+
+When a book status filter is active (e.g., "New"):
+1. For each folder in the current directory, the patch recursively scans all files inside
+2. If at least one book matches the selected status, the folder is shown
+3. If no books match, the folder is hidden
+4. The filter state is saved and automatically restored on next KOReader startup
+
+### Notes
+
+- Works only in normal folder browsing mode (not in metadata browser or collections view)
+- Performance: The first time you enter a folder with the filter active, there may be a slight delay while scanning subdirectories
+- The patch uses `BookList.getBookStatus()` to check each book's reading status
+- If all items would be filtered out (edge case), the original list is returned to prevent crashes
 ---
 
 ## 🞂 [2-cyrillic-transliteration-reverter.lua](2-cyrillic-transliteration-reverter.lua)
