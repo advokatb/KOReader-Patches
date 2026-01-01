@@ -106,6 +106,17 @@ local function saveSmartCollectionRules(rules)
     smart_collections_settings:flush()
 end
 
+-- Get auto-update setting (default: false for better performance)
+local function getAutoUpdate()
+    return smart_collections_settings:readSetting("auto_update", false)
+end
+
+-- Set auto-update setting
+local function setAutoUpdate(enabled)
+    smart_collections_settings:saveSetting("auto_update", enabled)
+    smart_collections_settings:flush()
+end
+
 -- Check if a collection is a smart collection
 local function isSmartCollection(collection_name)
     local rules = loadSmartCollectionRules()
@@ -574,6 +585,7 @@ local function showSmartCollectionRulesDialog(collection_name, existing_rules)
         operator = operator or OPERATORS.CONTAINS
         value = value or ""
         
+        local operator_menu
         local operator_items = {}
         local operator_options = getOperatorOptions(field)
         
@@ -587,7 +599,7 @@ local function showSmartCollectionRulesDialog(collection_name, existing_rules)
             })
         end
         
-        local operator_menu = Menu:new{
+        operator_menu = Menu:new{
             title = T(_("Select operator for %1"), METADATA_FIELDS[field].text),
             item_table = operator_items,
             covers_fullscreen = true,
@@ -630,6 +642,7 @@ local function showSmartCollectionRulesDialog(collection_name, existing_rules)
         
         -- For enum fields (like status), show a menu instead of text input
         if field_metadata.enum then
+            local status_menu
             local status_items = {}
             for status_key, status_text in pairs(READING_STATUSES) do
                 table.insert(status_items, {
@@ -660,7 +673,7 @@ local function showSmartCollectionRulesDialog(collection_name, existing_rules)
                 })
             end
             
-            local status_menu = Menu:new{
+            status_menu = Menu:new{
                 title = T(_("Select %1"), field_metadata.text),
                 item_table = status_items,
                 covers_fullscreen = true,
@@ -827,8 +840,22 @@ function FileManagerCollection:onCollListHold(item)
         },
     })
     
-    -- Add separator if smart collection option was added
+    -- Add smart collection specific options
     if is_smart then
+        table.insert(buttons, {
+            {
+                text = _("Update this collection"),
+                callback = function()
+                    UIManager:close(button_dialog)
+                    local rules = loadSmartCollectionRules()
+                    local count = updateSmartCollection(item.name, rules[item.name])
+                    UIManager:show(InfoMessage:new{
+                        text = count > 0 and T(_("Collection updated: %1 books added or removed"), count)
+                                          or _("No changes"),
+                    })
+                end,
+            },
+        })
         table.insert(buttons, {
             {
                 text = _("Remove smart collection rules"),
@@ -845,6 +872,46 @@ function FileManagerCollection:onCollListHold(item)
                                 text = _("Smart collection rules removed"),
                             })
                         end,
+                    })
+                end,
+            },
+        })
+    end
+    
+    -- Check if there are any smart collections for global options
+    local all_rules = loadSmartCollectionRules()
+    local has_smart_collections = next(all_rules) ~= nil
+    
+    if has_smart_collections then
+        table.insert(buttons, {
+            {
+                text = _("Update all smart collections"),
+                callback = function()
+                    UIManager:close(button_dialog)
+                    UIManager:show(InfoMessage:new{
+                        text = _("Updating all smart collections..."),
+                        timeout = 1,
+                    })
+                    -- Run in background
+                    local Trapper = require("ui/trapper")
+                    Trapper:dismissableRunInSubprocess(function()
+                        updateAllSmartCollections()
+                    end, function()
+                        UIManager:show(InfoMessage:new{
+                            text = _("All smart collections updated"),
+                        })
+                    end)
+                end,
+            },
+            {
+                text = getAutoUpdate() and _("Auto-update: ON") or _("Auto-update: OFF"),
+                callback = function()
+                    UIManager:close(button_dialog)
+                    local new_value = not getAutoUpdate()
+                    setAutoUpdate(new_value)
+                    UIManager:show(InfoMessage:new{
+                        text = new_value and _("Auto-update enabled: collections will update when list opens")
+                                          or _("Auto-update disabled: use manual update"),
                     })
                 end,
             },
@@ -935,14 +1002,16 @@ function FileManagerCollection:onBookMetadataChanged(prop_updated)
     end
 end
 
--- Update smart collections when showing collection list
+-- Update smart collections when showing collection list (only if auto-update is enabled)
 local orig_onShowCollList = FileManagerCollection.onShowCollList
 function FileManagerCollection:onShowCollList(file_or_selected_collections, caller_callback, no_dialog)
-    -- Auto-update all smart collections in background
-    local Trapper = require("ui/trapper")
-    Trapper:dismissableRunInSubprocess(function()
-        updateAllSmartCollections()
-    end)
+    -- Auto-update all smart collections in background (only if enabled)
+    if getAutoUpdate() then
+        local Trapper = require("ui/trapper")
+        Trapper:dismissableRunInSubprocess(function()
+            updateAllSmartCollections()
+        end)
+    end
     
     return orig_onShowCollList(self, file_or_selected_collections, caller_callback, no_dialog)
 end

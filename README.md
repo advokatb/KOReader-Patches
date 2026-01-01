@@ -76,16 +76,34 @@ Please [check the guide here](https://koreader.rocks/user_guide/#L2-userpatches)
 - **Reading status equals "Reading"** - All currently reading books
 - **Reading status equals "On hold"** - All books on hold
 
+### Update Modes
+
+Smart collections support two update modes:
+
+- **Manual update** (default): Collections are only updated when you explicitly request it
+- **Auto-update**: Collections are automatically updated every time the collection list opens
+
+**Why manual is the default:** Auto-update scans all files in connected folders for every smart collection. With many books or collections, this can cause noticeable delays when opening the collection list.
+
+**To update collections manually:**
+1. Long-press on any collection in the list
+2. Tap **"Update this collection"** (for one collection) or **"Update all smart collections"** (for all)
+
+**To enable/disable auto-update:**
+1. Long-press on any collection in the list
+2. Tap **"Auto-update: ON/OFF"** to toggle
+
 ### How It Works
 
-- Smart collections automatically scan connected folders for books
+- Smart collections scan connected folders for books
 - Each book's metadata is checked against the defined rules
 - Books matching the rules are automatically added to the collection
 - Books that no longer match are automatically removed
 - Collections are updated when:
   - Rules are saved
+  - You manually trigger an update
   - Book metadata changes
-  - Collection list is opened (background update)
+  - Collection list is opened (only if auto-update is enabled)
 
 ### Notes
 
@@ -360,6 +378,8 @@ You can use a custom SVG icon for the spine effect:
 - **Automatic folder filtering**: When you filter books by status, folders with no matching books are automatically hidden
 - **Recursive scanning**: Checks subdirectories to ensure parent folders with matching books deep inside remain visible
 - **Auto-loads on startup**: Remembers and applies your last filter selection when KOReader starts
+- **Safe navigation**: Always preserves "Go Up" (⬆ ../) navigation item to prevent crashes
+- **Real-time updates**: When you change a book's status, the folder visibility updates immediately
 
 ### Installation
 
@@ -388,6 +408,7 @@ When a book status filter is active (e.g., "New"):
 - Performance: The first time you enter a folder with the filter active, there may be a slight delay while scanning subdirectories
 - The patch uses `BookList.getBookStatus()` to check each book's reading status
 - If all items would be filtered out (edge case), the original list is returned to prevent crashes
+
 ---
 
 ## 🞂 [2-cyrillic-transliteration-reverter.lua](2-cyrillic-transliteration-reverter.lua)
