@@ -6,9 +6,13 @@ A collection of user patches for KOReader that enhance functionality and customi
 
 ## 🞂 How to install a user patch?
 
-Please [check the guide here](https://koreader.rocks/user_guide/#L2-userpatches) for detailed installation instructions.
+> [!IMPORTANT]
+> Please [check the guide here](https://koreader.rocks/user_guide/#L2-userpatches) for detailed installation instructions.
 
 ---
+
+<details>
+<summary><strong>🞂 <a href="2-smart-collections.lua">2-smart-collections.lua</a></strong> - Smart Collections</summary>
 
 ## 🞂 [2-smart-collections.lua](2-smart-collections.lua)
 
@@ -83,7 +87,8 @@ Smart collections support two update modes:
 - **Manual update** (default): Collections are only updated when you explicitly request it
 - **Auto-update**: Collections are automatically updated every time the collection list opens
 
-**Why manual is the default:** Auto-update scans all files in connected folders for every smart collection. With many books or collections, this can cause noticeable delays when opening the collection list.
+> [!IMPORTANT]
+> **Why manual is the default:** Auto-update scans all files in connected folders for every smart collection. With many books or collections, this can cause noticeable delays when opening the collection list.
 
 **To update collections manually:**
 1. Long-press on any collection in the list
@@ -123,9 +128,16 @@ local SMART_COLLECTIONS_DEBUG = true
 ```
 
 near the top of `2-smart-collections.lua`.  
-This enables detailed `logger.info` output (matched authors, rule checks, etc.). Remember to set it back to `false` once finished.
+
+> [!WARNING]
+> This enables detailed `logger.info` output (matched authors, rule checks, etc.). Remember to set it back to `false` once finished to avoid performance issues.
+
+</details>
 
 ---
+
+<details>
+<summary><strong>🞂 <a href="2-pt-metadata-browser.lua">2-pt-metadata-browser.lua</a></strong> - Metadata Browser for Project: Title</summary>
 
 ## 🞂 [2-pt-metadata-browser.lua](2-pt-metadata-browser.lua)
 
@@ -156,7 +168,8 @@ This enables detailed `logger.info` output (matched authors, rule checks, etc.).
 
 ### Configuration
 
-All settings are at the top of `2-pt-metadata-browser.lua` in the `CONFIGURATION SETTINGS` section:
+> [!NOTE]
+> All settings are at the top of `2-pt-metadata-browser.lua` in the `CONFIGURATION SETTINGS` section:
 
 - **Enable/disable metadata types**: Set `CONFIG_ENABLE_TITLE`, `CONFIG_ENABLE_AUTHOR`, `CONFIG_ENABLE_SERIES`, `CONFIG_ENABLE_GENRES`, `CONFIG_ENABLE_YEAR` to `false` to hide specific types
 - **Custom display order**: Set `CONFIG_METADATA_ORDER = {"AUTHOR", "SERIES", "GENRES", "YEAR", "TITLE"}` to customize the order
@@ -172,7 +185,8 @@ The patch reads metadata from KOReader's bookinfo cache database:
 - **Project: Title**: `DataStorage:getSettingsDir() .. "/PT_bookinfo_cache.sqlite3"`
 - **CoverBrowser**: `DataStorage:getSettingsDir() .. "/coverbrowser_bookinfo_cache.sqlite3"`
 
-The `keywords` field in the `bookinfo` table contains newline-separated values (genres, years, etc.) that are automatically parsed and categorized.
+> [!NOTE]
+> The `keywords` field in the `bookinfo` table contains newline-separated values (genres, years, etc.) that are automatically parsed and categorized.
 
 ### Notes
 
@@ -180,11 +194,16 @@ The `keywords` field in the `bookinfo` table contains newline-separated values (
 - The virtual folder exists only inside the UI; no files/folders are created on disk
 - Based on `2-pt-collections.lua` (virtual folder structure) and `2-BrowseByMetadata.lua` (metadata browsing functionality)
 
+</details>
+
 ---
+
+<details>
+<summary><strong>🞂 <a href="2-pt-collections.lua">2-pt-collections.lua</a></strong> - Collections View for Project: Title</summary>
 
 ## 🞂 [2-pt-collections.lua](2-pt-collections.lua)
 
-**Collections View for Project: Title** – adds a virtual “✪ Collections” folder inside the Project: Title file browser so you can browse KOReader collections as if they were directories.
+**Collections View for Project: Title** – adds a virtual "✪ Collections" folder inside the Project: Title file browser so you can browse KOReader collections as if they were directories.
 
 ### Features
 
@@ -216,7 +235,8 @@ The `keywords` field in the `bookinfo` table contains newline-separated values (
 5. Tap a book to open it, or use KOReader's standard long-press actions
 6. When you navigate out, the view automatically returns to your normal file browser display mode
 
-**Tip:** You can configure the Collections display mode separately from your file browser mode in **Menu → Project: Title settings → Collections display mode** (Cover Grid, Cover List, Details List, or Filenames List).
+> [!TIP]
+> You can configure the Collections display mode separately from your file browser mode in **Menu → Project: Title settings → Collections display mode** (Cover Grid, Cover List, Details List, or Filenames List).
 
 ### Configuration
 
@@ -228,7 +248,12 @@ The `keywords` field in the `bookinfo` table contains newline-separated values (
 - The virtual folder exists only inside the UI; no files/folders are created on disk
 - When sorting by "last read date", collections are ordered based on the most recently accessed book within each collection
 
+</details>
+
 ---
+
+<details>
+<summary><strong>🞂 <a href="2-custom-folder-fonts.lua">2-custom-folder-fonts.lua</a></strong> - Custom Folder Fonts</summary>
 
 ## 🞂 [2-custom-folder-fonts.lua](2-custom-folder-fonts.lua)
 
@@ -245,7 +270,8 @@ The `keywords` field in the `bookinfo` table contains newline-separated values (
 ### Installation
 
 1. Place your custom font files in `koreader/fonts/` folder on your device
-   - You can organize fonts in subdirectories (e.g., `fonts/Atkinson_Hyperlegible/`)
+   > [!TIP]
+   > You can organize fonts in subdirectories (e.g., `fonts/Atkinson_Hyperlegible/`)
    - Supported formats: `.ttf` and `.otf`
 
 2. Copy `2-custom-folder-fonts.lua` to `koreader/patches/` folder
@@ -306,13 +332,19 @@ This patch modifies the `ptutil.good_serif` and `ptutil.good_sans` font paths th
 
 </details>
 
-**Note:** This patch only affects folder names in Project: Title. It does not change:
-- Book titles
-- UI fonts
-- Reader fonts
-- Footer text (path display at bottom)
+> [!NOTE]
+> This patch only affects folder names in Project: Title. It does not change:
+> - Book titles
+> - UI fonts
+> - Reader fonts
+> - Footer text (path display at bottom)
+
+</details>
 
 ---
+
+<details>
+<summary><strong>🞂 <a href="2-pt-book-spine-effect.lua">2-pt-book-spine-effect.lua</a></strong> - Book Spine Effect (Apple Books style)</summary>
 
 ## 🞂 [2-pt-book-spine-effect.lua](2-pt-book-spine-effect.lua)
 
@@ -364,10 +396,17 @@ You can use a custom SVG icon for the spine effect:
 - Effect is always enabled (no on/off toggle)
 - Inspired by [this issue](https://github.com/SeriousHornet/KOReader.patches/issues/8) by [@eduardorodrigues08](https://github.com/eduardorodrigues08)
 
+> [!NOTE]
+> Effect is always enabled (no on/off toggle).
+
   ![In Home Folder](screenshots/pt-book-spine-effect.png)
 
+</details>
 
 ---
+
+<details>
+<summary><strong>🞂 <a href="2-pt-filter-folders-by-status.lua">2-pt-filter-folders-by-status.lua</a></strong> - Filter Folders by Book Status</summary>
 
 ## 🞂 [2-pt-filter-folders-by-status.lua](2-pt-filter-folders-by-status.lua)
 
@@ -405,11 +444,18 @@ When a book status filter is active (e.g., "New"):
 ### Notes
 
 - Works only in normal folder browsing mode (not in metadata browser or collections view)
-- Performance: The first time you enter a folder with the filter active, there may be a slight delay while scanning subdirectories
 - The patch uses `BookList.getBookStatus()` to check each book's reading status
 - If all items would be filtered out (edge case), the original list is returned to prevent crashes
 
+> [!NOTE]
+> Performance: The first time you enter a folder with the filter active, there may be a slight delay while scanning subdirectories.
+
+</details>
+
 ---
+
+<details>
+<summary><strong>🞂 <a href="2-cyrillic-transliteration-reverter.lua">2-cyrillic-transliteration-reverter.lua</a></strong> - Cyrillic Transliteration Reverter</summary>
 
 ## 🞂 [2-cyrillic-transliteration-reverter.lua](2-cyrillic-transliteration-reverter.lua)
 
@@ -461,3 +507,5 @@ The patch modifies KOReader's sorting functions to use transliterated (Cyrillic)
 - Folders like "Briendon Sandierson" are sorted as "Брендон Сандерсон" in the correct Cyrillic alphabetical position
 - All sorting modes (name, natural sorting, etc.) respect the transliterated order
 - Mixed folders (some transliterated, some not) are sorted correctly
+
+</details>
