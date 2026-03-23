@@ -117,6 +117,37 @@ local function setAutoUpdate(enabled)
     smart_collections_settings:flush()
 end
 
+-- Normalize KOReader reading status for rule evaluation.
+-- KOReader typically only persists summary.status = "complete"|"abandoned".
+-- "New" vs "Reading" is best inferred from whether the book has ever been opened
+-- (i.e., has a DocSettings sidecar).
+local function getNormalizedReadingStatus(filepath)
+    if not filepath or filepath == "" then
+        return nil
+    end
+
+    -- If there's no sidecar, consider it never opened => "new".
+    if DocSettings and DocSettings.hasSidecarFile and not DocSettings:hasSidecarFile(filepath) then
+        return "new"
+    end
+
+    local doc_settings = DocSettings and DocSettings.open and DocSettings:open(filepath)
+    if not doc_settings then
+        -- Fallback: if we can't read settings but there is a sidecar,
+        -- assume it's been opened => "reading".
+        return "reading"
+    end
+
+    local summary = doc_settings:readSetting("summary") or {}
+    local status = summary.status
+
+    if status == "complete" or status == "abandoned" then
+        return status
+    end
+
+    return "reading"
+end
+
 -- Check if a collection is a smart collection
 local function isSmartCollection(collection_name)
     local rules = loadSmartCollectionRules()
@@ -344,19 +375,13 @@ local function updateSmartCollection(collection_name, rules)
     local matches_count = 0
     for file in pairs(files_to_check) do
         files_checked = files_checked + 1
-        local book_props = BookInfoManager:getDocProps(file)
-        if book_props and next(book_props) then
-            -- Get reading status from DocSettings
-            local doc_settings = DocSettings:open(file)
-            if doc_settings then
-                local summary = doc_settings:readSetting("summary")
-                if summary and summary.status then
-                    book_props.status = summary.status
-                else
-                    -- Default to "reading" if no status is set
-                    book_props.status = "reading"
-                end
-            end
+        local book_props = BookInfoManager:getDocProps(file) or {}
+
+        -- Inject normalized reading status for rule evaluation.
+        -- Do this even when we don't have cached metadata, so status-only rules work.
+        book_props.status = getNormalizedReadingStatus(file)
+
+        if next(book_props) then
             
             files_with_metadata = files_with_metadata + 1
             local matches = evaluateRules(book_props, rules)
@@ -984,8 +1009,10 @@ function FileManagerCollection:onBookMetadataChanged(prop_updated)
         for coll_name in pairs(collections) do
             if rules[coll_name] then
                 -- Re-evaluate and update if needed
-                local book_props = prop_updated.doc_props or self.ui.bookinfo:getDocProps(file, nil, true)
+                local book_props = prop_updated.doc_props or self.ui.bookinfo:getDocProps(file, nil, true) or {}
                 if book_props then
+                    -- Ensure reading status is present & normalized for rules.
+                    book_props.status = getNormalizedReadingStatus(file)
                     local matches = evaluateRules(book_props, rules[coll_name])
                     local is_in_collection = ReadCollection:isFileInCollection(file, coll_name)
                     
@@ -1042,4 +1069,3 @@ function ReadCollection:updateCollectionFromFolder(collection_name, folders, is_
     end
     return orig_ReadCollection_updateCollectionFromFolder(self, collection_name, folders, is_showing)
 end
-
