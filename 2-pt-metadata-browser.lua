@@ -447,11 +447,15 @@ local function patchProjectTitleMetadataBrowser()
 
     local METADATA_SEGMENT_PATTERN = escapePattern(METADATA_SEGMENT)
 
+    -- Virtual paths use "/" as separator; encode real metadata values so slashes in Calibre tags
+    -- (e.g. "A/B/C Tag") stay a single path segment (see KOReader-Patches issue #12).
     local function encodeSegment(name)
-        return (name:gsub("/", "／"))
+        if name == nil then return nil end
+        return (tostring(name):gsub("/", "／"))
     end
 
     local function decodeSegment(segment)
+        if segment == nil then return nil end
         return (segment:gsub("／", "/"))
     end
 
@@ -588,7 +592,7 @@ local function patchProjectTitleMetadataBrowser()
                     end
                 end
             else
-                cur_value = fragment
+                cur_value = decodeSegment(fragment)
                 if cur_value == "\u{2205}" then
                     cur_value = false
                 end
@@ -629,7 +633,7 @@ local function patchProjectTitleMetadataBrowser()
                         if CONFIG.SHOW_BOOK_COUNT and count > 0 then
                             display_name = display_name .. " (" .. count .. ")"
                         end
-                        local this_path = path .. "/" .. (value or "\u{2205}")
+                        local this_path = path .. "/" .. encodeSegment(value or "\u{2205}")
                         local item = self:getListItem(nil, display_name, this_path, fake_attributes, collate)
                         item.nb_sub_files = count
                         item.mandatory = self:getMenuItemMandatory(item)
@@ -823,7 +827,7 @@ local function patchProjectTitleMetadataBrowser()
                                 table.insert(filters, {meta.db_column, cur_value})
                             end
                         else
-                            cur_value = fragment
+                            cur_value = decodeSegment(fragment)
                             if cur_value == "\u{2205}" then
                                 cur_value = false
                             end
