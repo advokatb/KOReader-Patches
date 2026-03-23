@@ -737,11 +737,14 @@ local function patchProjectTitleMetadataBrowser()
     function FileChooser:genItemTable(dirs, files, path)
         local item_table = orig_genItemTable(self, dirs, files, path)
 
-        local virtual_path_type = self:getMetadataPathType(path)
-        local up_path = path:gsub("(/[^/]+)$", "")
+        -- File search (and any other caller) may omit path; upstream skips "go up" in that case.
+        if path then
+            local virtual_path_type = self:getMetadataPathType(path)
+            local up_path = path:gsub("(/[^/]+)$", "")
 
-        if item_table[1] and item_table[1].path:find("/..$") then
-            item_table[1].path = virtual_path_type ~= nil and up_path or path .. "/.."
+            if item_table[1] and item_table[1].path and item_table[1].path:find("/..$") then
+                item_table[1].path = virtual_path_type ~= nil and up_path or path .. "/.."
+            end
         end
 
         return injectMetadataFolder(self, dirs, files, path, item_table)
