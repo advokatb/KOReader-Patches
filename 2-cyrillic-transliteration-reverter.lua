@@ -1,15 +1,18 @@
 --[[
     This user patch automatically converts transliterated text back to Cyrillic
-    for folder names displayed by Project: Title plugin in file manager only.
-    
+    for folder names in the file manager and for Bookshelf (folder cards,
+    breadcrumbs, hero tokens, spine titles, and sort keys).
+
     It uses comprehensive transliteration rules to automatically detect and convert
     transliterated Russian text back to Cyrillic script. This is useful when
     Calibre sends books with transliterated names that can't be changed, but
-    you want to see the original Cyrillic names in the file browser.
-    
+    you want to see the original Cyrillic names in the UI.
+
     Example: "Briendon Sandierson" -> "Брендон Сандерсон"
-             "Dжордж Оруелл" -> "Джордж Оруэлл"
+             "Dzhordzh Oruell" -> "Джордж Оруэлл"
 --]]
+
+local userpatch = require("userpatch")
 
 local Menu = require("ui/widget/menu")
 local BookList = require("ui/widget/booklist")
@@ -324,6 +327,14 @@ local function convert_transliteration(text)
     return text
 end
 
+-- Display/sort helper: strip folder trailing slash, then revert transliteration.
+local function translit_display(text)
+    if not text or type(text) ~= "string" or text == "" then
+        return text
+    end
+    return convert_transliteration(text:gsub("/$", ""))
+end
+
 -- Helper function to get transliterated text for sorting (without trailing slash)
 local function get_transliterated_sort_text(text)
     if not text or type(text) ~= "string" then
@@ -429,3 +440,166 @@ for collate_name, collate in pairs(BookList.collates) do
         end
     end
 end
+
+-- ─── Bookshelf plugin ───────────────────────────────────────────────────────
+-- Hooks display and sort paths in plugins/bookshelf.koplugin without
+-- mutating stored paths/labels (drill-down and findGroup keep Latin names).
+
+local function patchBookshelf(_plugin)
+    local ok_fc, FolderCard = pcall(require, "lib/bookshelf_folder_card")
+    if ok_fc and FolderCard and not FolderCard._cyrillic_translit_patched then
+        FolderCard._cyrillic_translit_patched = true
+        local orig_build = FolderCard.build
+        FolderCard.build = function(opts)
+            local patched = {}
+            for k, v in pairs(opts or {}) do patched[k] = v end
+            if patched.label then
+                patched.label = translit_display(patched.label)
+            end
+            return orig_build(patched)
+        end
+    end
+
+    local ok_se, SortEngine = pcall(require, "lib/bookshelf_sort_engine")
+    if ok_se and SortEngine and not SortEngine._cyrillic_translit_patched then
+        SortEngine._cyrillic_translit_patched = true
+        local function translitField(v)
+            if type(v) == "string" and v ~= "" then
+                return translit_display(v)
+            end
+            return v
+        end
+        local orig_title = SortEngine.KEYS.title.comparator
+        SortEngine.KEYS.title.comparator = function(a, b)
+            local av = translitField(a.title)
+                    or (a.doc_props and translitField(a.doc_props.display_title))
+                    or translitField(a.name) or translitField(a.label)
+            local bv = translitField(b.title)
+                    or (b.doc_props and translitField(b.doc_props.display_title))
+                    or translitField(b.name) or translitField(b.label)
+            return orig_title(
+                { title = av, doc_props = a.doc_props, name = a.name, label = a.label },
+                { title = bv, doc_props = b.doc_props, name = b.name, label = b.label }
+            )
+        end
+        local orig_filename = SortEngine.KEYS.filename.comparator
+        SortEngine.KEYS.filename.comparator = function(a, b)
+            local av = translitField(a.filename or a.file or a.name or a.series_name or a.label)
+            local bv = translitField(b.filename or b.file or b.name or b.series_name or b.label)
+            return orig_filename(
+                { filename = av, file = av, name = av, series_name = av, label = av },
+                { filename = bv, file = bv, name = bv, series_name = bv, label = bv }
+            )
+        end
+        local orig_series = SortEngine.KEYS.series_name.comparator
+        SortEngine.KEYS.series_name.comparator = function(a, b)
+            local av = translitField(a.series_name or a.series or a.label or a.name)
+            local bv = translitField(b.series_name or b.series or b.label or b.name)
+            return orig_series(
+                { series_name = av, series = av, label = av, name = av },
+                { series_name = bv, series = bv, label = bv, name = bv }
+            )
+        end
+        local orig_author = SortEngine.KEYS.author_surname.comparator
+        SortEngine.KEYS.author_surname.comparator = function(a, b)
+            local aa, ab = {}, {}
+            for k, v in pairs(a) do aa[k] = v end
+            for k, v in pairs(b) do ab[k] = v end
+            for _i, field in ipairs({ "author", "authors", "author_surname", "series_name", "name", "label" }) do
+                if type(aa[field]) == "string" then aa[field] = translit_display(aa[field]) end
+                if type(ab[field]) == "string" then ab[field] = translit_display(ab[field]) end
+            end
+            aa._surname_cache, ab._surname_cache = nil, nil
+            return orig_author(aa, ab)
+        end
+        local orig_given = SortEngine.KEYS.author_name.comparator
+        SortEngine.KEYS.author_name.comparator = function(a, b)
+            local aa, ab = {}, {}
+            for k, v in pairs(a) do aa[k] = v end
+            for k, v in pairs(b) do ab[k] = v end
+            for _i, field in ipairs({ "author", "authors", "author_name", "series_name", "name", "label" }) do
+                if type(aa[field]) == "string" then aa[field] = translit_display(aa[field]) end
+                if type(ab[field]) == "string" then ab[field] = translit_display(ab[field]) end
+            end
+            aa._given_cache, ab._given_cache = nil, nil
+            return orig_given(aa, ab)
+        end
+    end
+
+    local ok_tok, Tokens = pcall(require, "lib/bookshelf_tokens")
+    if ok_tok and Tokens and not Tokens._cyrillic_translit_patched then
+        Tokens._cyrillic_translit_patched = true
+        for _i, name in ipairs({ "title", "author", "authors", "series_name", "filename" }) do
+            local orig = Tokens.expanders[name]
+            if orig then
+                Tokens.expanders[name] = function(book, state)
+                    return translit_display(orig(book, state) or "")
+                end
+            end
+        end
+    end
+
+    local ok_cb, ChipBar = pcall(require, "lib/bookshelf_chip_bar")
+    if ok_cb and ChipBar then
+        if ChipBar and not ChipBar._cyrillic_translit_patched then
+            ChipBar._cyrillic_translit_patched = true
+            local orig_bc = ChipBar._initBreadcrumb
+            ChipBar._initBreadcrumb = function(self)
+                local saved = {}
+                for i = 1, #(self.breadcrumb_path or {}) do
+                    local entry = self.breadcrumb_path[i]
+                    saved[i] = entry.label
+                    if entry.label then
+                        entry.label = translit_display(entry.label)
+                    end
+                end
+                orig_bc(self)
+                for i = 1, #saved do
+                    self.breadcrumb_path[i].label = saved[i]
+                end
+            end
+        end
+    end
+
+    local ok_sw, SpineWidget = pcall(require, "lib/bookshelf_spine_widget")
+    if ok_sw and SpineWidget and not SpineWidget._cyrillic_translit_patched then
+        SpineWidget._cyrillic_translit_patched = true
+        local orig_sw_init = SpineWidget.init
+        SpineWidget.init = function(self)
+            local saved_title
+            if self.book and type(self.book.title) == "string" then
+                saved_title = self.book.title
+                self.book.title = translit_display(saved_title)
+            end
+            orig_sw_init(self)
+            if saved_title and self.book then
+                self.book.title = saved_title
+            end
+        end
+    end
+
+    local ok_sr, ShelfRow = pcall(require, "lib/bookshelf_shelf_row")
+    if ok_sr and ShelfRow and not ShelfRow._cyrillic_translit_patched then
+        ShelfRow._cyrillic_translit_patched = true
+        local orig_new = ShelfRow.new
+        ShelfRow.new = function(opts)
+            if opts and opts.show_titles and opts.items then
+                local saved_titles = {}
+                for i, item in ipairs(opts.items) do
+                    if item and type(item.title) == "string" then
+                        saved_titles[i] = item.title
+                        item.title = translit_display(item.title)
+                    end
+                end
+                local row = orig_new(opts)
+                for i, title in pairs(saved_titles) do
+                    if opts.items[i] then opts.items[i].title = title end
+                end
+                return row
+            end
+            return orig_new(opts)
+        end
+    end
+end
+
+userpatch.registerPatchPluginFunc("bookshelf", patchBookshelf)
