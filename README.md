@@ -37,6 +37,7 @@ A collection of user patches for KOReader that enhance functionality and customi
 - **Publication date** - Filter by publication date
 - **Pages** (numeric) - Filter by page count
 - **Reading status** - Filter by reading status (New, Reading, On hold, Finished)
+- **Rating** (numeric) - Filter by star rating (0 to 5)
 
 ### Installation
 
@@ -79,6 +80,7 @@ A collection of user patches for KOReader that enhance functionality and customi
 - **Reading status equals "Finished"** - All finished books
 - **Reading status equals "Reading"** - All currently reading books
 - **Reading status equals "On hold"** - All books on hold
+- **Rating greater than 3** - All books with more than 3 stars
 
 ### Update Modes
 
