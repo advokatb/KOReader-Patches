@@ -362,7 +362,7 @@ local function patchProjectTitleSpineEffect(plugin)
     logger.info("PT Book Spine Effect: Patch loaded and applied")
 end
 
-userpatch.registerPatchPluginFunc("coverbrowser", patchProjectTitleSpineEffect)
+userpatch.registerPatchPluginFunc("projecttitle", patchProjectTitleSpineEffect)
 
 local UIManager = require("ui/uimanager")
 UIManager:nextTick(function()

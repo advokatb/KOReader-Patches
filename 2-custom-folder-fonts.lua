@@ -252,7 +252,7 @@ local function patchProjectTitleFolderFonts(plugin)
     end
 end
 
-userpatch.registerPatchPluginFunc("coverbrowser", patchProjectTitleFolderFonts)
+userpatch.registerPatchPluginFunc("projecttitle", patchProjectTitleFolderFonts)
 
 logger.info("Custom folder fonts patch loaded - v3.0")
 

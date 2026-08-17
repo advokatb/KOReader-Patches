@@ -904,7 +904,7 @@ end
 
 local METADATA_CONFIG = nil
 
-userpatch.registerPatchPluginFunc("coverbrowser", function(CoverBrowser)
+userpatch.registerPatchPluginFunc("projecttitle", function(CoverBrowser)
     local BookInfoManager = require("bookinfomanager")
     local util = require("util")
     local T = ffiUtil.template
@@ -1195,5 +1195,5 @@ userpatch.registerPatchPluginFunc("coverbrowser", function(CoverBrowser)
     end
 end)
 
-userpatch.registerPatchPluginFunc("coverbrowser", patchProjectTitleMetadataBrowser)
+userpatch.registerPatchPluginFunc("projecttitle", patchProjectTitleMetadataBrowser)
 

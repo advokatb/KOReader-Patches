@@ -1044,7 +1044,7 @@ function FileManagerCollection:onShowCollList(file_or_selected_collections, call
 end
 
 -- Register patch to get BookInfoManager from CoverBrowser plugin
-userpatch.registerPatchPluginFunc("coverbrowser", function(CoverBrowser)
+userpatch.registerPatchPluginFunc("projecttitle", function(CoverBrowser)
     -- Try to get BookInfoManager from the plugin
     if CoverBrowser.BookInfoManager then
         BookInfoManagerRef = CoverBrowser.BookInfoManager

@@ -688,4 +688,4 @@ local function patchProjectTitleCollections()
     logger.info("Project: Title collections view patch applied")
 end
 
-userpatch.registerPatchPluginFunc("coverbrowser", patchProjectTitleCollections)
+userpatch.registerPatchPluginFunc("projecttitle", patchProjectTitleCollections)
